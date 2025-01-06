@@ -35,20 +35,26 @@ async def create_quote(quote: Quote):
 
 # Get a random quote
 @router.get("/random", response_description="Get a random quote", response_model=dict)
-async def get_random_quote():
-    # Count the total number of quotes
-    total_quotes = await quotes_collection.count_documents({})
+async def get_random_quote(author: Optional[str] = Query(None, description="Filter by author")):
+    # Build the query
+    query = {}
+    if author:
+        query["author"] = {"$regex": f"^{author}$", "$options": "i"}
+    
+    # Count the total number of matching quotes
+    total_quotes = await quotes_collection.count_documents(query)
     if total_quotes == 0:
-        raise HTTPException(status_code=404, detail="No quotes found")
+        raise HTTPException(status_code=404, detail="No quotes found for the specified filter")
     
     # Pick a random offset
     random_offset = random.randint(0, total_quotes - 1)
     
     # Fetch the random quote
-    random_quote = await quotes_collection.find().skip(random_offset).to_list(length=1)
+    random_quote = await quotes_collection.find(query).skip(random_offset).to_list(length=1)
     if random_quote:
         return quote_helper(random_quote[0])
     raise HTTPException(status_code=404, detail="No quotes found")
+
 
 # Update a quote by ID
 @router.put("/{id}", response_description="Update a quote", response_model=dict)
