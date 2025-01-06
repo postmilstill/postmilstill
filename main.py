@@ -3,8 +3,8 @@ from routers import router
 
 app = FastAPI()
 
-# Include the router for quotes
-app.include_router(router, prefix="/quotes", tags=["Quotes"])
+# Include the aggregated router (prefixes are defined in the individual routers)
+app.include_router(router)
 
 @app.get("/")
 def read_root():
